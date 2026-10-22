@@ -8,149 +8,546 @@
     <title>Function Definition Compiler</title>
 
     <style>
+        :root {
+            --primary: #7164d8;
+            --primary-dark: #5c50bd;
+            --primary-light: #eeebff;
+            --blue: #6386e8;
+            --page: #f6f5fc;
+            --surface: #ffffff;
+            --text: #252744;
+            --muted: #777b98;
+            --border: #e9e7f5;
+            --editor: #17182b;
+            --success: #16845b;
+            --success-bg: #e8f7ef;
+            --error: #cf4057;
+            --error-bg: #fff0f2;
+            --pending: #8589a2;
+        }
+
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f1f4f9;
-            color: #202b43;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--page);
+            color: var(--text);
+            min-height: 100vh;
         }
 
+        /* Header */
+
         header {
-            background: #17264b;
+            background: linear-gradient(115deg, #6558c9, #7788e8);
             color: white;
-            padding: 22px 5%;
+            padding: 25px 5%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::after {
+            content: "";
+            position: absolute;
+            width: 230px;
+            height: 230px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            right: 5%;
+            top: -145px;
+            box-shadow: 0 0 0 30px rgba(255,255,255,0.04),
+                        0 0 0 60px rgba(255,255,255,0.03);
+            pointer-events: none;
+        }
+
+        .header-inner {
+            max-width: 1450px;
+            margin: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.17);
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 25px;
         }
 
         header h1 {
-            margin: 0 0 8px;
-            font-size: 26px;
+            margin: 0 0 6px;
+            font-size: clamp(22px, 3vw, 29px);
+            font-weight: 700;
+            letter-spacing: -0.6px;
         }
 
         header p {
             margin: 0;
-            color: #d5def4;
-            font-size: 14px;
+            color: #e7e5ff;
+            font-size: 13px;
+            line-height: 1.6;
         }
 
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 18px;
+            padding: 7px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.23);
+            background: rgba(255,255,255,0.1);
+            font-size: 12px;
+            color: #ffffff;
+        }
+
+        .header-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #9ff0cf;
+        }
+
+        /* Main layout */
+
         main {
-            max-width: 1400px;
-            margin: 25px auto;
-            padding: 0 20px;
+            max-width: 1450px;
+            margin: 0 auto;
+            padding: 30px 5% 45px;
+        }
+
+        .welcome {
+            margin-bottom: 23px;
+        }
+
+        .welcome h2 {
+            font-size: 21px;
+            margin: 0 0 7px;
+            letter-spacing: -0.3px;
+        }
+
+        .welcome p {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.6;
         }
 
         .layout {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
         }
 
         .card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
+            background: var(--surface);
+            padding: 23px;
+            border: 1px solid var(--border);
+            border-radius: 17px;
             margin-bottom: 20px;
-            box-shadow: 0 3px 12px #17264b12;
+            box-shadow: 0 5px 22px rgba(69, 61, 135, 0.045);
             min-width: 0;
+            transition: box-shadow 0.2s ease;
         }
 
-        h2 {
-            font-size: 18px;
-            margin: 0 0 15px;
+        .card:hover {
+            box-shadow: 0 8px 27px rgba(69, 61, 135, 0.075);
         }
+
+        .card-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 17px;
+        }
+
+        .card-heading h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+
+        .heading-icon {
+            display: inline-grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 10px;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .heading-left {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .mini-label {
+            color: var(--muted);
+            font-size: 11px;
+            background: #f5f4fb;
+            border: 1px solid var(--border);
+            padding: 6px 9px;
+            border-radius: 7px;
+            white-space: nowrap;
+        }
+
+        /* Source editor */
 
         textarea {
+            display: block;
             width: 100%;
-            height: 340px;
+            height: 370px;
             resize: vertical;
-            padding: 15px;
-            background: #101827;
-            color: #d9e7ff;
-            border: none;
-            border-radius: 8px;
-            font-family: Consolas, monospace;
+            padding: 19px;
+            background: var(--editor);
+            color: #e4e4ff;
+            border: 1px solid #292a43;
+            border-radius: 12px;
+            outline: none;
+            font-family: Consolas, "Courier New", monospace;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.85;
+            tab-size: 4;
+            caret-color: #b7a8ff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        textarea:focus {
+            border-color: #8c80ee;
+            box-shadow: 0 0 0 3px rgba(113,100,216,0.13);
+        }
+
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 11px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .editor-footer span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Buttons */
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex-wrap: wrap;
+            margin-top: 19px;
         }
 
         button {
-            border: none;
-            border-radius: 6px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            border-radius: 9px;
             padding: 11px 15px;
-            margin: 10px 5px 0 0;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 650;
             cursor: pointer;
-            font-weight: bold;
+            transition: background 0.18s, transform 0.18s,
+                        box-shadow 0.18s, border-color 0.18s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:focus-visible {
+            outline: 3px solid rgba(113,100,216,0.28);
+            outline-offset: 2px;
         }
 
         .compile {
-            background: #138b79;
             color: white;
+            background: linear-gradient(110deg, #7060d6, #7d70e4);
+            box-shadow: 0 4px 10px rgba(113,100,216,0.18);
+        }
+
+        .compile:hover {
+            background: linear-gradient(110deg, #5e50c1, #6e60d5);
+            box-shadow: 0 6px 14px rgba(113,100,216,0.25);
         }
 
         .secondary {
-            background: #e8edf6;
-            color: #202b43;
+            color: #565b7d;
+            background: #f5f4fc;
+            border-color: #e8e6f6;
         }
+
+        .secondary:hover {
+            background: #eeebff;
+            border-color: #d8d2ff;
+            color: var(--primary-dark);
+        }
+
+        .button-icon {
+            font-size: 14px;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.7;
+            margin: 17px 0 0;
+        }
+
+        /* Analysis status */
 
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
         }
 
         .status {
-            background: #f3f5f9;
-            padding: 12px 8px;
-            border-radius: 8px;
-            overflow-wrap: anywhere;
+            background: #faf9fe;
+            border: 1px solid #efedf8;
+            border-radius: 12px;
+            padding: 14px 12px;
+            min-width: 0;
+            transition: background 0.2s, border-color 0.2s;
         }
 
         .status small {
             display: block;
-            margin-bottom: 8px;
-            color: #606c82;
+            color: var(--muted);
+            font-size: 11px;
+            margin-bottom: 11px;
         }
 
         .status strong {
-            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .status strong::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
         }
 
         .success {
-            color: #16834a;
+            color: var(--success);
+        }
+
+        .status:has(.success) {
+            background: #f0faf5;
+            border-color: #d8f1e4;
         }
 
         .failed {
-            color: #c53242;
+            color: var(--error);
+        }
+
+        .status:has(.failed) {
+            background: #fff6f7;
+            border-color: #ffe1e6;
         }
 
         .pending {
-            color: #747f91;
+            color: var(--pending);
         }
 
+        /* Output panels */
+
         pre {
-            background: #101827;
-            color: #d9e7ff;
-            padding: 16px;
-            border-radius: 8px;
-            min-height: 100px;
+            background: var(--editor);
+            color: #e2e4ff;
+            padding: 19px;
+            border: 1px solid #292a43;
+            border-radius: 12px;
+            min-height: 105px;
+            max-height: 430px;
             overflow: auto;
             white-space: pre-wrap;
             overflow-wrap: anywhere;
-            font: 13px/1.6 Consolas, monospace;
+            font: 12px/1.85 Consolas, "Courier New", monospace;
+            margin: 0;
         }
 
-        .hint {
-            color: #69758a;
-            font-size: 12px;
-            line-height: 1.5;
+        pre::-webkit-scrollbar,
+        textarea::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        @media (max-width: 800px) {
+        pre::-webkit-scrollbar-thumb,
+        textarea::-webkit-scrollbar-thumb {
+            background: #555578;
+            border-radius: 10px;
+        }
+
+        .output-caption {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .output-caption span:first-child {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .output-tag {
+            font-size: 10px;
+            color: var(--primary);
+            background: var(--primary-light);
+            border-radius: 6px;
+            padding: 5px 8px;
+        }
+
+        /* Lower result panels */
+
+        .lower-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 22px;
+            align-items: start;
+        }
+
+        .lower-grid .card {
+            min-width: 0;
+        }
+
+        .lower-grid pre {
+            min-height: 130px;
+        }
+
+        /* Footer */
+
+        .page-footer {
+            text-align: center;
+            padding: 4px 10px 0;
+            color: #9294ad;
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        /* Responsive layout */
+
+        @media (max-width: 950px) {
+            main {
+                padding-left: 4%;
+                padding-right: 4%;
+            }
+
             .layout {
                 grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            textarea {
+                height: 320px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 22px 5%;
+            }
+
+            main {
+                padding: 22px 4% 30px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+                margin-bottom: 15px;
+            }
+
+            .brand-icon {
+                width: 42px;
+                height: 42px;
+            }
+
+            .status-grid {
+                gap: 6px;
+            }
+
+            .status {
+                padding: 11px 7px;
+            }
+
+            .status small {
+                font-size: 10px;
+            }
+
+            .status strong {
+                font-size: 10px;
+            }
+
+            textarea {
+                height: 290px;
+                padding: 14px;
+                font-size: 12px;
+            }
+
+            .actions {
+                gap: 7px;
+            }
+
+            button {
+                padding: 10px 11px;
+                font-size: 11px;
+            }
+
+            .lower-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            pre {
+                padding: 13px;
+                font-size: 11px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
             }
         }
     </style>
@@ -159,84 +556,186 @@
 <body>
 
 <header>
-    <h1>Function Definition Compiler</h1>
-    <p>Lexical Analysis · Syntax Analysis · Semantic Analysis · AST</p>
+    <div class="header-inner">
+        <div class="brand">
+            <div class="brand-icon" aria-hidden="true">⌘</div>
+
+            <div>
+                <h1>Function Definition Compiler</h1>
+                <p>Explore how source code becomes a structured program.</p>
+            </div>
+        </div>
+
+        <div class="header-tag">
+            <span class="header-dot"></span>
+            Compiler Front End
+        </div>
+    </div>
 </header>
 
 <main>
+    <div class="welcome">
+        <h2>Compiler Workspace</h2>
+        <p>Write your program, analyze its structure, and inspect the compilation results.</p>
+    </div>
+
     <div class="layout">
 
+        <!-- Source code editor -->
         <section class="card">
-            <h2>Source Code Editor</h2>
+            <div class="card-heading">
+                <div class="heading-left">
+                    <span class="heading-icon" aria-hidden="true">⌘</span>
+                    <h2>Source Code Editor</h2>
+                </div>
 
-            <textarea id="source" spellcheck="false">def add(a, b) begin
+                <span class="mini-label">Python-style syntax</span>
+            </div>
+
+            <textarea id="source" spellcheck="false"
+                aria-label="Source code editor">def add(a, b) begin
     return a + b;
 end;
 
 result = add(10, 20);
 print(result);</textarea>
 
-            <button class="compile" onclick="compileCode()">
-                ▶ Compile
-            </button>
+            <div class="editor-footer">
+                <span>✦ Your code is analyzed, not executed</span>
+                <span>UTF-8 · Source Editor</span>
+            </div>
 
-            <button class="secondary" onclick="loadExample()">
-                Load Example
-            </button>
+            <div class="actions">
+                <button class="compile" onclick="compileCode()">
+                    <span class="button-icon">▶</span>
+                    Compile
+                </button>
 
-            <button class="secondary" onclick="clearAll()">
-                Clear
-            </button>
+                <button class="secondary" onclick="loadExample()">
+                    <span class="button-icon">↻</span>
+                    Load Example
+                </button>
+
+                <button class="secondary" onclick="clearAll()">
+                    <span class="button-icon">×</span>
+                    Clear
+                </button>
+            </div>
 
             <p class="hint">
-                Enter a program using your compiler's supported grammar.
-                This tool validates the program; it does not execute it.
+                Supported constructs include function definitions, parameters,
+                function calls, assignments, return statements, print statements
+                and arithmetic expressions.
             </p>
         </section>
 
+        <!-- Status and compiler output -->
         <div>
             <section class="card">
-                <h2>Analysis Status</h2>
+                <div class="card-heading">
+                    <div class="heading-left">
+                        <span class="heading-icon" aria-hidden="true">◉</span>
+                        <h2>Analysis Status</h2>
+                    </div>
+
+                    <span class="mini-label">Pipeline</span>
+                </div>
 
                 <div class="status-grid">
                     <div class="status">
-                        <small>Lexical</small>
+                        <small>01 / Lexical</small>
                         <strong id="lexical" class="pending">Not run</strong>
                     </div>
 
                     <div class="status">
-                        <small>Syntax</small>
+                        <small>02 / Syntax</small>
                         <strong id="syntax" class="pending">Not run</strong>
                     </div>
 
                     <div class="status">
-                        <small>Semantic</small>
+                        <small>03 / Semantic</small>
                         <strong id="semantic" class="pending">Not run</strong>
                     </div>
                 </div>
             </section>
 
             <section class="card">
-                <h2>Compiler Output</h2>
+                <div class="card-heading">
+                    <div class="heading-left">
+                        <span class="heading-icon" aria-hidden="true">▤</span>
+                        <h2>Compiler Output</h2>
+                    </div>
+                </div>
+
+                <div class="output-caption">
+                    <span>Compilation messages and errors</span>
+                    <span class="output-tag">OUTPUT</span>
+                </div>
+
                 <pre id="output">Click Compile to analyze your program.</pre>
             </section>
         </div>
     </div>
 
+    <!-- Tokens -->
     <section class="card">
-        <h2>Recognized Tokens</h2>
+        <div class="card-heading">
+            <div class="heading-left">
+                <span class="heading-icon" aria-hidden="true">≡</span>
+                <h2>Recognized Tokens</h2>
+            </div>
+
+            <span class="mini-label">Lexical Analysis</span>
+        </div>
+
+        <div class="output-caption">
+            <span>Token type and token value</span>
+            <span class="output-tag">TOKENS</span>
+        </div>
+
         <pre id="tokens">Tokens will appear here.</pre>
     </section>
 
-    <section class="card">
-        <h2>Abstract Syntax Tree (AST)</h2>
-        <pre id="ast">The AST will appear here after successful parsing.</pre>
-    </section>
+    <!-- AST and symbol table -->
+    <div class="lower-grid">
+        <section class="card">
+            <div class="card-heading">
+                <div class="heading-left">
+                    <span class="heading-icon" aria-hidden="true">⑂</span>
+                    <h2>Abstract Syntax Tree</h2>
+                </div>
+            </div>
 
-    <section class="card">
-        <h2>Function Symbol Table</h2>
-        <pre id="symbols">The symbol table will appear here.</pre>
-    </section>
+            <div class="output-caption">
+                <span>Structured representation of your program</span>
+                <span class="output-tag">AST</span>
+            </div>
+
+            <pre id="ast">The AST will appear here after successful parsing.</pre>
+        </section>
+
+        <section class="card">
+            <div class="card-heading">
+                <div class="heading-left">
+                    <span class="heading-icon" aria-hidden="true">▦</span>
+                    <h2>Function Symbol Table</h2>
+                </div>
+            </div>
+
+            <div class="output-caption">
+                <span>Registered functions and parameters</span>
+                <span class="output-tag">SYMBOLS</span>
+            </div>
+
+            <pre id="symbols">The symbol table will appear here.</pre>
+        </section>
+    </div>
+
+    <div class="page-footer">
+        Function Definition Compiler · Compiler Design Mini Project
+        <br>
+        Lexical Analysis · Syntax Analysis · AST · Semantic Analysis
+    </div>
 </main>
 
 <script>
@@ -249,6 +748,7 @@ print(result);`;
 
     function setStatus(id, value) {
         const element = document.getElementById(id);
+
         element.textContent = value;
         element.className =
             value === "Successful" ? "success" :
@@ -327,6 +827,10 @@ print(result);`;
             "The symbol table will appear here.";
     }
 </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
