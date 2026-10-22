@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Function Definition Compiler</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f4f9;
+            color: #202b43;
+        }
+
+        header {
+            background: #17264b;
+            color: white;
+            padding: 22px 5%;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 26px;
+        }
+
+        header p {
+            margin: 0;
+            color: #d5def4;
+            font-size: 14px;
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px #17264b12;
+            min-width: 0;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 0 0 15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 340px;
+            resize: vertical;
+            padding: 15px;
+            background: #101827;
+            color: #d9e7ff;
+            border: none;
+            border-radius: 8px;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 11px 15px;
+            margin: 10px 5px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .compile {
+            background: #138b79;
+            color: white;
+        }
+
+        .secondary {
+            background: #e8edf6;
+            color: #202b43;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .status {
+            background: #f3f5f9;
+            padding: 12px 8px;
+            border-radius: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .status small {
+            display: block;
+            margin-bottom: 8px;
+            color: #606c82;
+        }
+
+        .status strong {
+            font-size: 13px;
+        }
+
+        .success {
+            color: #16834a;
+        }
+
+        .failed {
+            color: #c53242;
+        }
+
+        .pending {
+            color: #747f91;
+        }
+
+        pre {
+            background: #101827;
+            color: #d9e7ff;
+            padding: 16px;
+            border-radius: 8px;
+            min-height: 100px;
+            overflow: auto;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font: 13px/1.6 Consolas, monospace;
+        }
+
+        .hint {
+            color: #69758a;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Function Definition Compiler</h1>
+    <p>Lexical Analysis · Syntax Analysis · Semantic Analysis · AST</p>
+</header>
+
+<main>
+    <div class="layout">
+
+        <section class="card">
+            <h2>Source Code Editor</h2>
+
+            <textarea id="source" spellcheck="false">def add(a, b) begin
+    return a + b;
+end;
+
+result = add(10, 20);
+print(result);</textarea>
+
+            <button class="compile" onclick="compileCode()">
+                ▶ Compile
+            </button>
+
+            <button class="secondary" onclick="loadExample()">
+                Load Example
+            </button>
+
+            <button class="secondary" onclick="clearAll()">
+                Clear
+            </button>
+
+            <p class="hint">
+                Enter a program using your compiler's supported grammar.
+                This tool validates the program; it does not execute it.
+            </p>
+        </section>
+
+        <div>
+            <section class="card">
+                <h2>Analysis Status</h2>
+
+                <div class="status-grid">
+                    <div class="status">
+                        <small>Lexical</small>
+                        <strong id="lexical" class="pending">Not run</strong>
+                    </div>
+
+                    <div class="status">
+                        <small>Syntax</small>
+                        <strong id="syntax" class="pending">Not run</strong>
+                    </div>
+
+                    <div class="status">
+                        <small>Semantic</small>
+                        <strong id="semantic" class="pending">Not run</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Compiler Output</h2>
+                <pre id="output">Click Compile to analyze your program.</pre>
+            </section>
+        </div>
+    </div>
+
+    <section class="card">
+        <h2>Recognized Tokens</h2>
+        <pre id="tokens">Tokens will appear here.</pre>
+    </section>
+
+    <section class="card">
+        <h2>Abstract Syntax Tree (AST)</h2>
+        <pre id="ast">The AST will appear here after successful parsing.</pre>
+    </section>
+
+    <section class="card">
+        <h2>Function Symbol Table</h2>
+        <pre id="symbols">The symbol table will appear here.</pre>
+    </section>
+</main>
+
+<script>
+    const example = `def add(a, b) begin
+    return a + b;
+end;
+
+result = add(10, 20);
+print(result);`;
+
+    function setStatus(id, value) {
+        const element = document.getElementById(id);
+        element.textContent = value;
+        element.className =
+            value === "Successful" ? "success" :
+            value === "Failed" ? "failed" : "pending";
+    }
+
+    async function compileCode() {
+        const code = document.getElementById("source").value;
+
+        document.getElementById("output").textContent =
+            "Compiling program...";
+
+        try {
+            const response = await fetch("/compile", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ code: code })
+            });
+
+            const result = await response.json();
+
+            setStatus("lexical", result.lexical);
+            setStatus("syntax", result.syntax);
+            setStatus("semantic", result.semantic);
+
+            document.getElementById("output").textContent =
+                result.output;
+
+            document.getElementById("tokens").textContent =
+                result.tokens.length
+                    ? result.tokens.map(
+                        t => "(" + t.type + ", " + t.value + ")"
+                    ).join("\n")
+                    : "No tokens available.";
+
+            document.getElementById("ast").textContent =
+                result.ast || "AST unavailable.";
+
+            document.getElementById("symbols").textContent =
+                JSON.stringify(result.symbol_table, null, 2);
+
+        } catch (error) {
+            document.getElementById("output").textContent =
+                "Unable to connect to the compiler server. " +
+                "Check that app.py is running.";
+        }
+    }
+
+    function loadExample() {
+        document.getElementById("source").value = example;
+        resetOutput();
+    }
+
+    function clearAll() {
+        document.getElementById("source").value = "";
+        resetOutput();
+    }
+
+    function resetOutput() {
+        ["lexical", "syntax", "semantic"].forEach(
+            id => setStatus(id, "Not run")
+        );
+
+        document.getElementById("output").textContent =
+            "Click Compile to analyze your program.";
+
+        document.getElementById("tokens").textContent =
+            "Tokens will appear here.";
+
+        document.getElementById("ast").textContent =
+            "The AST will appear here.";
+
+        document.getElementById("symbols").textContent =
+            "The symbol table will appear here.";
+    }
+</script>
+
+</body>
+</html>
