@@ -1,12 +1,9 @@
 
-# app.py
-# Flask web application for the Function Definition Compiler
-
 from flask import Flask, render_template, request, jsonify
 from lexer import tokenize
 from parser import parse, ParseError
 from ast_nodes import build_ast, display_ast
-from semantic import analyze
+from semantic_analyzer import analyze
 
 import io
 from contextlib import redirect_stdout
@@ -20,100 +17,92 @@ def home():
 
 
 @app.route("/compile", methods=["POST"])
-def compile_program():
-
+def compile_code():
     data = request.get_json(silent=True) or {}
     source_code = data.get("code", "")
 
-    result = {
-        "lexical": "Not run",
-        "syntax": "Not run",
-        "semantic": "Not run",
-        "tokens": [],
-        "output": "",
-        "ast": "",
-        "symbol_table": {}
-    }
+    token_list = []
 
-    if not source_code.strip():
-        result["output"] = "Please enter a program."
-        return jsonify(result)
-
-    # Stage 1: Lexical analysis
     try:
+        # STEP 1: LEXICAL ANALYSIS
         tokens = tokenize(source_code)
 
-        result["lexical"] = "Successful"
-        result["tokens"] = [
-            {"type": token[0], "value": token[1]}
-            for token in tokens
-        ]
+        for token in tokens:
+            token_list.append({
+                "type": token[0],
+                "value": token[1]
+            })
 
-    except SyntaxError as error:
-        result["lexical"] = "Failed"
-        result["output"] = "Lexical error: " + str(error)
-        return jsonify(result)
+        # STEP 2: SYNTAX ANALYSIS
+        parsed_data = parse(tokens)
 
-    # Stage 2: Syntax analysis
-    try:
-        program = parse(tokens)
-        result["syntax"] = "Successful"
+        # STEP 3: ABSTRACT SYNTAX TREE GENERATION
+        ast_root = build_ast(parsed_data)
+
+        ast_buffer = io.StringIO()
+
+        with redirect_stdout(ast_buffer):
+            display_ast(ast_root)
+
+        ast_output = ast_buffer.getvalue()
+
+        # STEP 4: SEMANTIC ANALYSIS
+        symbol_table, errors = analyze(parsed_data)
+
+        # STEP 5: COMPILER OUTPUT
+        output_text = (
+            "Lexical analysis successful.\n"
+            f"Tokens recognized: {len(tokens)}\n"
+            "Syntax analysis successful.\n"
+        )
+
+        if errors:
+            output_text += "Semantic analysis failed.\n"
+
+            for error in errors:
+                output_text += f"- {error}\n"
+
+            semantic_status = "Failed"
+
+        else:
+            output_text += (
+                "Semantic analysis successful.\n"
+                "Program is valid."
+            )
+
+            semantic_status = "Successful"
+
+        return jsonify({
+            "lexical": "Successful",
+            "syntax": "Successful",
+            "semantic": semantic_status,
+            "tokens": token_list,
+            "output": output_text,
+            "ast": ast_output,
+            "symbol_table": symbol_table
+        })
 
     except ParseError as error:
-        result["syntax"] = "Failed"
-        result["output"] = (
-            "Lexical analysis successful.\n"
-            "Syntax error: " + str(error)
-        )
-        return jsonify(result)
+        return jsonify({
+            "lexical": "Successful" if token_list else "Not performed",
+            "syntax": "Failed",
+            "semantic": "Not performed",
+            "tokens": token_list,
+            "output": f"Syntax analysis failed:\n{error}",
+            "ast": "Syntax tree unavailable because parsing failed.",
+            "symbol_table": {}
+        })
 
-    # Stage 3: AST construction and display
-    try:
-        ast = build_ast(program)
-
-        buffer = io.StringIO()
-
-        with redirect_stdout(buffer):
-            display_ast(ast)
-
-        result["ast"] = buffer.getvalue()
-
-    except (ValueError, KeyError, TypeError) as error:
-        result["output"] = "AST construction error: " + str(error)
-        return jsonify(result)
-
-    # Stage 4: Semantic analysis
-    symbol_table, errors = analyze(program)
-
-    result["symbol_table"] = symbol_table
-    result["semantic"] = "Failed" if errors else "Successful"
-
-    output = [
-        "Lexical analysis successful.",
-        "Tokens recognized: " + str(len(tokens)),
-        "Syntax analysis successful."
-    ]
-
-    if errors:
-        output.extend(["", "Semantic errors:"])
-
-        for error in errors:
-            output.append("- " + error)
-
-        output.extend([
-            "",
-            "Semantic analysis failed.",
-            "Program is invalid."
-        ])
-    else:
-        output.extend([
-            "Semantic analysis successful.",
-            "Program is valid."
-        ])
-
-    result["output"] = "\n".join(output)
-
-    return jsonify(result)
+    except Exception as error:
+        return jsonify({
+            "lexical": "Failed",
+            "syntax": "Not performed",
+            "semantic": "Not performed",
+            "tokens": token_list,
+            "output": f"Compilation error: {error}",
+            "ast": "Syntax tree unavailable.",
+            "symbol_table": {}
+        })
 
 
 if __name__ == "__main__":
