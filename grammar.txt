@@ -1,1 +1,100 @@
+FUNCTION DEFINITION COMPILER — CONTEXT-FREE GRAMMAR
 
+1. PROGRAM STRUCTURE
+
+Program          → TopLevelList
+TopLevelList     → TopLevelStatement ; TopLevelList | ε
+
+TopLevelStatement → FunctionDef
+                   | Assignment
+                   | FunctionCall
+                   | PrintStmt
+
+
+2. FUNCTION DEFINITIONS
+
+FunctionDef      → def id ( ParamListOpt ) begin FunctionBody end
+
+ParamListOpt     → ParamList | ε
+ParamList        → id ParamTail
+ParamTail        → , id ParamTail | ε
+
+
+3. FUNCTION BODY
+
+FunctionBody     → BodyStatement ; FunctionBody | ε
+
+BodyStatement    → Assignment
+                  | FunctionCall
+                  | ReturnStmt
+                  | PrintStmt
+
+
+4. RETURN STATEMENTS
+
+ReturnStmt       → return Expr
+
+
+5. FUNCTION CALLS
+
+FunctionCall     → id ( ArgListOpt )
+ArgListOpt       → ArgList | ε
+ArgList          → Expr ArgTail
+ArgTail          → , Expr ArgTail | ε
+
+
+6. ASSIGNMENT AND PRINT STATEMENTS
+
+Assignment       → id = Expr
+PrintStmt        → print ( Expr )
+
+
+7. ARITHMETIC EXPRESSIONS
+
+Expr             → Term ExprTail
+ExprTail         → + Term ExprTail
+                  | - Term ExprTail
+                  | ε
+
+Term             → Factor TermTail
+TermTail         → * Factor TermTail
+                  | / Factor TermTail
+                  | ε
+
+Factor           → id
+                  | number
+                  | FunctionCall
+                  | ( Expr )
+
+
+8. TERMINALS
+
+def, begin, end, return, print
+id, number, (, ), ,, ;, =, +, -, *, /
+
+
+9. NON-TERMINALS
+
+Program, TopLevelList, TopLevelStatement,
+FunctionDef, ParamListOpt, ParamList, ParamTail,
+FunctionBody, BodyStatement, ReturnStmt,
+FunctionCall, ArgListOpt, ArgList, ArgTail,
+Assignment, PrintStmt, Expr, ExprTail,
+Term, TermTail, Factor
+
+
+10. START SYMBOL
+
+Program     
+
+
+
+sample input :
+
+def add(a, b) begin
+    return a + b;
+end;
+def main() begin
+    print(add(10, 20));
+end;
+ENDINPUT
