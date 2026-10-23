@@ -1,5 +1,5 @@
 
-# parser.py.
+# parser.py
 # Recursive-descent parser for the Function Definition Compiler
 
 
