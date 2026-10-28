@@ -1,0 +1,1350 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Function Definition Compiler</title>
+
+<style>
+:root {
+    --bg: #f6f5fc;
+    --card: #ffffff;
+    --primary: #7564df;
+    --primary-dark: #5b4bc4;
+    --lavender: #efedff;
+    --text: #292b49;
+    --muted: #7c81a5;
+    --border: #e7e5f5;
+    --dark: #19192d;
+    --green: #12855e;
+    --red: #d9485f;
+    --orange: #bd7816;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 30px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+header { margin-bottom: 28px; }
+
+header h1 {
+    font-size: 25px;
+    margin: 0 0 9px;
+    letter-spacing: -0.5px;
+}
+
+header p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+}
+
+.panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 26px;
+    box-shadow: 0 8px 30px rgba(57, 48, 112, 0.035);
+    min-width: 0;
+}
+
+.panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.panel-heading h2 {
+    font-size: 17px;
+    margin: 0;
+    font-weight: 700;
+}
+
+.panel-icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    background: var(--lavender);
+    color: var(--primary);
+    border-radius: 12px;
+    font-size: 19px;
+    flex-shrink: 0;
+}
+
+.tag {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    background: #f6f5fc;
+    border: 1px solid var(--border);
+    padding: 8px 11px;
+    border-radius: 9px;
+    white-space: nowrap;
+}
+
+#source {
+    display: block;
+    width: 100%;
+    height: 415px;
+    resize: vertical;
+    padding: 22px;
+    border: 1px solid #2d2d47;
+    border-radius: 14px;
+    background: var(--dark);
+    color: #e8e7ff;
+    font: 14px/2 Consolas, "Courier New", monospace;
+    outline: none;
+    tab-size: 4;
+}
+
+#source:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(117, 100, 223, 0.12);
+}
+
+.helper-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 12px;
+}
+
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+button {
+    border: 1px solid var(--border);
+    background: #f6f5fc;
+    color: #555a80;
+    border-radius: 11px;
+    padding: 13px 17px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 650;
+    transition: transform .15s, background .15s;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    background: #eeecff;
+}
+
+button.primary {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 5px 12px rgba(117, 100, 223, 0.18);
+}
+
+button.primary:hover { background: var(--primary-dark); }
+
+.support {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+    margin: 19px 0 0;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.status-item {
+    padding: 15px 12px;
+    border-radius: 14px;
+    background: #f4f5fa;
+    border: 1px solid var(--border);
+    min-width: 0;
+}
+
+.status-item .step {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+
+.status-item .state {
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.status-item .state::before {
+    content: "●";
+    font-size: 10px;
+    margin-right: 7px;
+}
+
+.status-item.success {
+    background: #f0faf5;
+    border-color: #d2f0e1;
+}
+
+.status-item.success .state { color: var(--green); }
+
+.status-item.failed {
+    background: #fff3f4;
+    border-color: #ffd9de;
+}
+
+.status-item.failed .state { color: var(--red); }
+
+.status-item.pending .state { color: var(--muted); }
+
+.description {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0 0 13px;
+}
+
+.output-box {
+    background: var(--dark);
+    color: #e8e7ff;
+    padding: 20px 22px;
+    border: 1px solid #2d2d47;
+    border-radius: 14px;
+    min-height: 120px;
+    max-height: 350px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: 13px/1.9 Consolas, "Courier New", monospace;
+}
+
+.subheading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.subheading h3 {
+    font-size: 14px;
+    margin: 0;
+}
+
+.small-tag {
+    color: var(--primary);
+    background: var(--lavender);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.tree-box {
+    background: var(--dark);
+    color: #e4e3ff;
+    padding: 20px;
+    border-radius: 14px;
+    overflow: auto;
+    max-height: 500px;
+    white-space: pre;
+    font: 13px/1.85 Consolas, "Courier New", monospace;
+}
+
+.tree-box .node { color: #c6baff; }
+.tree-box .branch { color: #7770a8; }
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+}
+
+th, td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    overflow-wrap: anywhere;
+}
+
+th {
+    color: var(--muted);
+    background: #f8f7fd;
+    font-weight: 650;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.empty {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 15px 0;
+}
+
+footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 25px 0 0;
+}
+
+@media (max-width: 1000px) {
+    body { padding: 20px; }
+    .workspace { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 500px) {
+    body { padding: 13px; }
+    .panel { padding: 17px; }
+    .status-grid { grid-template-columns: 1fr; }
+    #source { height: 330px; padding: 15px; }
+    header h1 { font-size: 22px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Compiler Workspace</h1>
+    <p>Write your program, analyze its structure, and inspect the compilation results.</p>
+</header>
+
+<main class="workspace">
+
+    <!-- LEFT COLUMN -->
+    <div class="column">
+
+        <section class="panel">
+            <div class="panel-heading">
+                <span class="panel-icon">⌘</span>
+                <h2>Source Code Editor</h2>
+                <span class="tag">Compiler Language</span>
+            </div>
+
+            <textarea id="source" spellcheck="false" aria-label="Source code editor">def add(a, b) begin
+    return a + b;
+end;
+
+result = add(10, 20);
+print(result);</textarea>
+
+            <div class="helper-row">
+                <span>✦ Code is analyzed, not executed</span>
+                <span>UTF-8 · Source Editor</span>
+            </div>
+
+            <div class="buttons">
+                <button class="primary" onclick="compileCode()">▶ Compile</button>
+                <button onclick="loadExample()">↻ Load Example</button>
+                <button onclick="clearAll()">× Clear</button>
+            </div>
+
+            <p class="support">
+                Supported constructs include function definitions, parameters,
+                function calls, assignments, return statements, print statements
+                and arithmetic expressions.
+            </p>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <span class="panel-icon">⌗</span>
+                <h2>Recognized Tokens</h2>
+                <span class="tag" id="token-count">0 tokens</span>
+            </div>
+
+            <p class="description">Tokens identified by the lexical analyzer.</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Token Type</th>
+                            <th>Token Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tokens">
+                        <tr><td colspan="3" class="empty">Compile a program to view tokens.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="column">
+
+        <section class="panel">
+            <div class="panel-heading">
+                <span class="panel-icon">◉</span>
+                <h2>Analysis Status</h2>
+                <span class="tag">Pipeline</span>
+            </div>
+
+            <div class="status-grid">
+                <div class="status-item pending" id="lexical-status">
+                    <div class="step">01 / Lexical</div>
+                    <div class="state">Waiting</div>
+                </div>
+                <div class="status-item pending" id="syntax-status">
+                    <div class="step">02 / Syntax</div>
+                    <div class="state">Waiting</div>
+                </div>
+                <div class="status-item pending" id="semantic-status">
+                    <div class="step">03 / Semantic</div>
+                    <div class="state">Waiting</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <span class="panel-icon">▤</span>
+                <h2>Compiler Output</h2>
+            </div>
+
+            <div class="subheading">
+                <p class="description">Compilation messages and errors</p>
+                <span class="small-tag">Output</span>
+            </div>
+
+            <pre id="output" class="output-box">Ready to compile.
+Enter your source code and click Compile.</pre>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <span class="panel-icon">🌳</span>
+                <h2>Syntax Tree (AST)</h2>
+                <span class="tag">Tree View</span>
+            </div>
+
+            <p class="description">Fully expanded Abstract Syntax Tree.</p>
+            <pre id="ast" class="tree-box">Compile a syntactically valid program to view its AST.</pre>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <span class="panel-icon">▦</span>
+                <h2>Symbol Table</h2>
+            </div>
+
+            <p class="description">Function definitions and their parameters.</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function Name</th>
+                            <th>Parameters</th>
+                            <th>Parameter Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="symbols">
+                        <tr><td colspan="3" class="empty">No symbols available.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer>Function Definition Compiler · Frontend Analysis Workspace</footer>
+
+<script>
+"use strict";
+
+/* =========================================================
+   1. GENERAL HELPERS
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+
+function setStatus(id, status, label) {
+    const element = $(id);
+    element.className = "status-item " + status;
+    element.querySelector(".state").textContent = label;
+}
+
+function resetResults() {
+    setStatus("lexical-status", "pending", "Waiting");
+    setStatus("syntax-status", "pending", "Waiting");
+    setStatus("semantic-status", "pending", "Waiting");
+
+    $("output").textContent = "Ready to compile.";
+    $("ast").textContent = "Compile a syntactically valid program to view its AST.";
+
+    $("tokens").innerHTML =
+        '<tr><td colspan="3" class="empty">Compile a program to view tokens.</td></tr>';
+
+    $("symbols").innerHTML =
+        '<tr><td colspan="3" class="empty">No symbols available.</td></tr>';
+
+    $("token-count").textContent = "0 tokens";
+}
+
+/* =========================================================
+   2. LEXICAL ANALYZER
+   ========================================================= */
+
+const KEYWORDS = new Set(["def", "begin", "end", "return", "print"]);
+
+function tokenize(source) {
+    const tokens = [];
+    const errors = [];
+    let position = 0;
+    let line = 1;
+    let column = 1;
+
+    while (position < source.length) {
+        const char = source[position];
+
+        if (char === "\n") {
+            position++;
+            line++;
+            column = 1;
+            continue;
+        }
+
+        if (/[ \t\r]/.test(char)) {
+            position++;
+            column++;
+            continue;
+        }
+
+        const startLine = line;
+        const startColumn = column;
+
+        if (/[a-zA-Z_]/.test(char)) {
+            let value = "";
+
+            while (
+                position < source.length &&
+                /[a-zA-Z0-9_]/.test(source[position])
+            ) {
+                value += source[position];
+                position++;
+                column++;
+            }
+
+            const type = KEYWORDS.has(value) ? value : "id";
+
+            tokens.push({
+                type,
+                value,
+                line: startLine,
+                column: startColumn
+            });
+            continue;
+        }
+
+        if (/[0-9]/.test(char)) {
+            let value = "";
+
+            while (
+                position < source.length &&
+                /[0-9]/.test(source[position])
+            ) {
+                value += source[position];
+                position++;
+                column++;
+            }
+
+            if (
+                source[position] === "." &&
+                /[0-9]/.test(source[position + 1] || "")
+            ) {
+                value += ".";
+                position++;
+                column++;
+
+                while (
+                    position < source.length &&
+                    /[0-9]/.test(source[position])
+                ) {
+                    value += source[position];
+                    position++;
+                    column++;
+                }
+            }
+
+            tokens.push({
+                type: "number",
+                value,
+                line: startLine,
+                column: startColumn
+            });
+            continue;
+        }
+
+        if ("+-*/=".includes(char)) {
+            tokens.push({
+                type: char,
+                value: char,
+                line: startLine,
+                column: startColumn
+            });
+
+            position++;
+            column++;
+            continue;
+        }
+
+        if ("(),;".includes(char)) {
+            tokens.push({
+                type: char,
+                value: char,
+                line: startLine,
+                column: startColumn
+            });
+
+            position++;
+            column++;
+            continue;
+        }
+
+        errors.push(
+            `Invalid character '${char}' at line ${line}, column ${column}.`
+        );
+
+        position++;
+        column++;
+    }
+
+    tokens.push({
+        type: "EOF",
+        value: "EOF",
+        line,
+        column
+    });
+
+    return { tokens, errors };
+}
+
+/* =========================================================
+   3. PARSER / SYNTAX ANALYZER
+   ========================================================= */
+
+class ParseError extends Error {
+    constructor(message, token) {
+        super(message);
+        this.name = "ParseError";
+        this.token = token;
+    }
+}
+
+class Parser {
+    constructor(tokens) {
+        this.tokens = tokens;
+        this.position = 0;
+    }
+
+    current() {
+        return this.tokens[this.position] || {
+            type: "EOF",
+            value: "EOF",
+            line: 1,
+            column: 1
+        };
+    }
+
+    at(type) {
+        return this.current().type === type;
+    }
+
+    take(type) {
+        const token = this.current();
+
+        if (token.type !== type) {
+            throw new ParseError(
+                `Expected '${type}' but found '${token.value}' at line ${token.line}, column ${token.column}.`,
+                token
+            );
+        }
+
+        this.position++;
+        return token;
+    }
+
+    takeIdentifier() {
+        return this.take("id").value;
+    }
+
+    parse() {
+        const statements = [];
+
+        while (!this.at("EOF")) {
+            statements.push(this.parseStatement());
+        }
+
+        return {
+            type: "Program",
+            statements
+        };
+    }
+
+    parseStatement() {
+        if (this.at("def")) {
+            return this.parseFunction();
+        }
+
+        if (this.at("print")) {
+            return this.parsePrint();
+        }
+
+        if (this.at("id")) {
+            const next = this.tokens[this.position + 1];
+
+            if (next && next.type === "=") {
+                return this.parseAssignment();
+            }
+
+            if (next && next.type === "(") {
+                const call = this.parseCall();
+                this.take(";");
+                return call;
+            }
+        }
+
+        const token = this.current();
+
+        throw new ParseError(
+            `Unexpected token '${token.value}' at line ${token.line}, column ${token.column}. Expected a function definition, assignment, function call, or print statement.`,
+            token
+        );
+    }
+
+    parseFunction() {
+        this.take("def");
+        const name = this.takeIdentifier();
+
+        this.take("(");
+        const params = [];
+
+        if (!this.at(")")) {
+            params.push(this.takeIdentifier());
+
+            while (this.at(",")) {
+                this.take(",");
+                params.push(this.takeIdentifier());
+            }
+        }
+
+        this.take(")");
+        this.take("begin");
+
+        const body = [];
+
+        while (!this.at("end") && !this.at("EOF")) {
+            body.push(this.parseBodyStatement());
+        }
+
+        this.take("end");
+        this.take(";");
+
+        return {
+            type: "FunctionDef",
+            name,
+            params,
+            body
+        };
+    }
+
+    parseBodyStatement() {
+        if (this.at("return")) {
+            this.take("return");
+            const expression = this.parseExpression();
+            this.take(";");
+
+            return {
+                type: "Return",
+                expression
+            };
+        }
+
+        if (this.at("print")) {
+            return this.parsePrint();
+        }
+
+        if (this.at("id")) {
+            const next = this.tokens[this.position + 1];
+
+            if (next && next.type === "=") {
+                return this.parseAssignment();
+            }
+
+            if (next && next.type === "(") {
+                const call = this.parseCall();
+                this.take(";");
+                return call;
+            }
+        }
+
+        const token = this.current();
+
+        throw new ParseError(
+            `Unexpected token '${token.value}' inside function at line ${token.line}, column ${token.column}.`,
+            token
+        );
+    }
+
+    parsePrint() {
+        this.take("print");
+        this.take("(");
+        const expression = this.parseExpression();
+        this.take(")");
+        this.take(";");
+
+        return {
+            type: "Print",
+            expression
+        };
+    }
+
+    parseAssignment() {
+        const name = this.takeIdentifier();
+        this.take("=");
+        const expression = this.parseExpression();
+        this.take(";");
+
+        return {
+            type: "Assignment",
+            name,
+            expression
+        };
+    }
+
+    parseCall() {
+        const name = this.takeIdentifier();
+        this.take("(");
+
+        const args = [];
+
+        if (!this.at(")")) {
+            args.push(this.parseExpression());
+
+            while (this.at(",")) {
+                this.take(",");
+                args.push(this.parseExpression());
+            }
+        }
+
+        this.take(")");
+
+        return {
+            type: "Call",
+            name,
+            args
+        };
+    }
+
+    parseExpression() {
+        let left = this.parseTerm();
+
+        while (this.at("+") || this.at("-")) {
+            const operator = this.current().value;
+            this.position++;
+
+            const right = this.parseTerm();
+
+            left = {
+                type: "BinaryOp",
+                operator,
+                left,
+                right
+            };
+        }
+
+        return left;
+    }
+
+    parseTerm() {
+        let left = this.parseFactor();
+
+        while (this.at("*") || this.at("/")) {
+            const operator = this.current().value;
+            this.position++;
+
+            const right = this.parseFactor();
+
+            left = {
+                type: "BinaryOp",
+                operator,
+                left,
+                right
+            };
+        }
+
+        return left;
+    }
+
+    parseFactor() {
+        if (this.at("number")) {
+            return {
+                type: "Number",
+                value: this.take("number").value
+            };
+        }
+
+        if (this.at("id")) {
+            if (
+                this.tokens[this.position + 1] &&
+                this.tokens[this.position + 1].type === "("
+            ) {
+                return this.parseCall();
+            }
+
+            return {
+                type: "Identifier",
+                name: this.takeIdentifier()
+            };
+        }
+
+        if (this.at("(")) {
+            this.take("(");
+            const expression = this.parseExpression();
+            this.take(")");
+            return expression;
+        }
+
+        const token = this.current();
+
+        throw new ParseError(
+            `Expected a number, identifier, function call, or parenthesized expression at line ${token.line}, column ${token.column}. Found '${token.value}'.`,
+            token
+        );
+    }
+}
+
+/* =========================================================
+   4. ABSTRACT SYNTAX TREE
+   ========================================================= */
+
+function getChildren(node) {
+    switch (node.type) {
+        case "Program":
+            return node.statements;
+
+        case "FunctionDef":
+            return [
+                {
+                    type: "Parameters",
+                    params: node.params
+                },
+                {
+                    type: "Body",
+                    statements: node.body
+                }
+            ];
+
+        case "Parameters":
+            return node.params.map(name => ({
+                type: "Parameter",
+                name
+            }));
+
+        case "Body":
+            return node.statements;
+
+        case "Assignment":
+            return [node.expression];
+
+        case "Return":
+        case "Print":
+            return [node.expression];
+
+        case "BinaryOp":
+            return [node.left, node.right];
+
+        case "Call":
+            return node.args;
+
+        default:
+            return [];
+    }
+}
+
+function nodeLabel(node) {
+    switch (node.type) {
+        case "Program": return "Program";
+        case "FunctionDef": return `FunctionDef: ${node.name}`;
+        case "Parameters": return "Parameters";
+        case "Parameter": return `Parameter: ${node.name}`;
+        case "Body": return "Body";
+        case "Assignment": return `Assignment: ${node.name}`;
+        case "Call": return `FunctionCall: ${node.name}`;
+        case "Return": return "Return";
+        case "Print": return "Print";
+        case "BinaryOp": return `BinaryOp: ${node.operator}`;
+        case "Identifier": return `Identifier: ${node.name}`;
+        case "Number": return `Number: ${node.value}`;
+        default: return node.type;
+    }
+}
+
+function makeASTText(root) {
+    const lines = [nodeLabel(root)];
+
+    function visit(node, prefix) {
+        const children = getChildren(node);
+
+        children.forEach((child, index) => {
+            const last = index === children.length - 1;
+            const branch = last ? "└── " : "├── ";
+
+            lines.push(prefix + branch + nodeLabel(child));
+
+            const nextPrefix = prefix + (last ? "    " : "│   ");
+
+            visit(child, nextPrefix);
+        });
+    }
+
+    visit(root, "");
+    return lines.join("\n");
+}
+
+/* =========================================================
+   5. SEMANTIC ANALYZER
+   ========================================================= */
+
+function collectFunctions(program) {
+    const functions = {};
+    const errors = [];
+    const duplicateNames = new Set();
+
+    for (const statement of program.statements) {
+        if (statement.type !== "FunctionDef") {
+            continue;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(functions, statement.name)) {
+            errors.push(`Duplicate function definition: '${statement.name}'.`);
+            duplicateNames.add(statement.name);
+            continue;
+        }
+
+        const seenParams = new Set();
+
+        for (const parameter of statement.params) {
+            if (seenParams.has(parameter)) {
+                errors.push(
+                    `Duplicate parameter '${parameter}' in function '${statement.name}'.`
+                );
+            }
+
+            seenParams.add(parameter);
+        }
+
+        functions[statement.name] = {
+            params: statement.params,
+            node: statement
+        };
+    }
+
+    return { functions, errors, duplicateNames };
+}
+
+function analyzeSemantic(program) {
+    const collected = collectFunctions(program);
+    const functions = collected.functions;
+    const errors = [...collected.errors];
+
+    function checkExpression(node) {
+        if (!node) return;
+
+        if (node.type === "Call") {
+            checkCall(node);
+            return;
+        }
+
+        if (node.type === "BinaryOp") {
+            checkExpression(node.left);
+            checkExpression(node.right);
+        }
+    }
+
+    function checkCall(node) {
+        if (!Object.prototype.hasOwnProperty.call(functions, node.name)) {
+            errors.push(`Call to undefined function '${node.name}'.`);
+        } else {
+            const expected = functions[node.name].params.length;
+            const actual = node.args.length;
+
+            if (expected !== actual) {
+                errors.push(
+                    `Function '${node.name}' expects ${expected} argument(s), but received ${actual}.`
+                );
+            }
+        }
+
+        node.args.forEach(checkExpression);
+    }
+
+    function checkStatement(statement, insideFunction) {
+        switch (statement.type) {
+            case "FunctionDef":
+                statement.body.forEach(child => checkStatement(child, true));
+                break;
+
+            case "Assignment":
+                checkExpression(statement.expression);
+                break;
+
+            case "Print":
+                checkExpression(statement.expression);
+                break;
+
+            case "Return":
+                if (!insideFunction) {
+                    errors.push("Return statement outside a function.");
+                }
+                checkExpression(statement.expression);
+                break;
+
+            case "Call":
+                checkCall(statement);
+                break;
+        }
+    }
+
+    program.statements.forEach(statement => {
+        checkStatement(statement, false);
+    });
+
+    return {
+        functions,
+        errors,
+        duplicateNames: collected.duplicateNames
+    };
+}
+
+/* =========================================================
+   6. DISPLAY HELPERS
+   ========================================================= */
+
+function displayTokens(tokens) {
+    const tbody = $("tokens");
+    tbody.replaceChildren();
+
+    const visibleTokens = tokens.filter(token => token.type !== "EOF");
+
+    $("token-count").textContent =
+        `${visibleTokens.length} token${visibleTokens.length === 1 ? "" : "s"}`;
+
+    if (visibleTokens.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="3" class="empty">No tokens found.</td></tr>';
+        return;
+    }
+
+    visibleTokens.forEach((token, index) => {
+        const row = document.createElement("tr");
+
+        [index + 1, token.type, token.value].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+    });
+}
+
+function displaySymbols(functions) {
+    const tbody = $("symbols");
+    tbody.replaceChildren();
+
+    const names = Object.keys(functions);
+
+    if (names.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="3" class="empty">No function definitions found.</td></tr>';
+        return;
+    }
+
+    names.forEach(name => {
+        const params = functions[name].params;
+        const row = document.createElement("tr");
+
+        [name, params.length ? params.join(", ") : "(none)", params.length]
+            .forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+
+        tbody.appendChild(row);
+    });
+}
+
+function displayOutput(lines) {
+    $("output").textContent = lines.join("\n");
+}
+
+/* =========================================================
+   7. MAIN COMPILER PIPELINE
+   ========================================================= */
+
+function compileCode() {
+    resetResults();
+
+    const source = $("source").value;
+    const messages = [];
+
+    let lexicalPassed = false;
+    let syntaxPassed = false;
+    let semanticPassed = false;
+
+    // Lexical analysis
+    const lexicalResult = tokenize(source);
+    displayTokens(lexicalResult.tokens);
+
+    if (lexicalResult.errors.length > 0) {
+        setStatus("lexical-status", "failed", "Failed");
+        setStatus("syntax-status", "pending", "Not performed");
+        setStatus("semantic-status", "pending", "Not performed");
+
+        messages.push("Lexical analysis failed.");
+
+        lexicalResult.errors.forEach(error => {
+            messages.push("- " + error);
+        });
+
+        messages.push("");
+        messages.push("Fix the lexical errors before continuing.");
+
+        displayOutput(messages);
+        $("ast").textContent = "AST unavailable because lexical analysis failed.";
+        return;
+    }
+
+    lexicalPassed = true;
+    setStatus("lexical-status", "success", "Successful");
+    messages.push("Lexical analysis successful.");
+    messages.push(
+        `Tokens recognized: ${lexicalResult.tokens.length - 1}`
+    );
+
+    // Syntax analysis
+    let program;
+
+    try {
+        const parser = new Parser(lexicalResult.tokens);
+        program = parser.parse();
+
+        syntaxPassed = true;
+        setStatus("syntax-status", "success", "Successful");
+        messages.push("Syntax analysis successful.");
+
+        // Display the AST
+        $("ast").textContent = makeASTText(program);
+
+    } catch (error) {
+        setStatus("syntax-status", "failed", "Failed");
+        setStatus("semantic-status", "pending", "Not performed");
+
+        messages.push("Syntax analysis failed.");
+        messages.push("- " + error.message);
+
+        $("ast").textContent = "AST unavailable because parsing failed.";
+
+        displayOutput(messages);
+        return;
+    }
+
+    // Semantic analysis
+    const semanticResult = analyzeSemantic(program);
+    displaySymbols(semanticResult.functions);
+
+    if (semanticResult.errors.length > 0) {
+        setStatus("semantic-status", "failed", "Failed");
+
+        messages.push("Semantic analysis failed.");
+
+        semanticResult.errors.forEach(error => {
+            messages.push("- " + error);
+        });
+
+        messages.push("");
+        messages.push("Program contains semantic errors.");
+
+    } else {
+        semanticPassed = true;
+        setStatus("semantic-status", "success", "Successful");
+
+        messages.push("Semantic analysis successful.");
+        messages.push("Program is valid.");
+    }
+
+    displayOutput(messages);
+}
+
+/* =========================================================
+   8. EXAMPLE AND CLEAR BUTTONS
+   ========================================================= */
+
+function loadExample() {
+    $("source").value =
+`def add(a, b) begin
+    return a + b;
+end;
+
+result = add(10, 20);
+print(result);`;
+
+    resetResults();
+}
+
+function clearAll() {
+    $("source").value = "";
+    resetResults();
+    $("source").focus();
+}
+
+/* =========================================================
+   9. INITIALIZE
+   ========================================================= */
+
+resetResults();
+</script>
+
+</body>
+</html>
